@@ -1,0 +1,22 @@
+* Using bash
+** Upload you default public key
+#+BEGIN_SRC bash
+  aws ec2 import-key-pair --key-name 'test-key' \
+	     --public-key-material file://~/.ssh/id_rsa.pub
+#+END_SRC
+
+#+BEGIN_SRC json
+  {
+      "KeyPairs": [
+	  {
+	      "KeyFingerprint": "i dont want to show",
+	      "KeyName": "maciekw@laptop"
+	  },
+	  {
+	      "KeyFingerprint": "i dont want to show",
+	      "KeyName": "test-key"
+	  }
+      ]
+  }
+
+#+END_SRC
