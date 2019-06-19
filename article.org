@@ -55,6 +55,20 @@ The way of computing fingerprint is different:
     openssl sha1 -c
 #+END_SRC
 * Using python
+We're going to use pycryptodome package. Please create new virtualenv.
+I don't want to be responsible if you mess up your system.
+#+BEGIN_SRC python
+  from Crypto.PublicKey import RSA
+  import hashlib
+
+  proper_fp = "65:8f:82:a0:8f:53:77:ad:63:c8:f7:15:d6:36:69:04"
+
+  k = RSA.import_key(open('locally-created-key', 'rb').read())
+  k_der = k.publickey().export_key(format='DER')
+
+  hash = hashlib.md5(k_der).hexdigest()
+#+END_SRC
 * references
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
 https://gist.github.com/jtriley/7270594
+https://en.wikipedia.org/wiki/PKCS_8
