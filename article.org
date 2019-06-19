@@ -1,10 +1,19 @@
 * Using bash
 ** Upload you default public key
+Of course, we don't like AWS key managemnt GUI. Why not jus login to a newly
+created instance with our favorite SSH key. It's easy. Just upload your key
+using aws commandline.
 #+BEGIN_SRC bash
   aws ec2 import-key-pair --key-name 'test-key' \
 	     --public-key-material file://~/.ssh/id_rsa.pub
 #+END_SRC
-
+You can finish now and go play with your new instance.
+** Veryfying keys
+Here Bezos made things worse. You can display keys in your account:
+#+BEGIN_SRC bash
+  aws ec2 describe-key-pairs
+#+END_SRC
+The output:
 #+BEGIN_SRC json
   {
       "KeyPairs": [
@@ -18,5 +27,34 @@
 	  }
       ]
   }
-
 #+END_SRC
+
+The fingerprint displayed by the command has nothing to do with OpenSSH
+fingerprint. To compute such fingerprint from your key you have to have private
+key in DER format, then compute MD5:
+#+BEGIN_SRC bash
+  openssl rsa -in ~/.ssh/id_rsa -pubout -outform DER |
+    openssl md5 -c
+#+END_SRC
+
+To make thing even worse - in case of keys created in EC2 fingerprints are
+computed in diferent way. Please refer link at the end of the article.
+** Creating keys with AWS
+You can also create keys within AWS. I don't know why you would do it, but if you wish...
+#+BEGIN_SRC bash
+  aws ec2 create-key-pair --key-name "test-aws-created" |
+    jq -r '.KeyMaterial'
+#+END_SRC
+
+Here you go. The pretty private key you can redirect to file. Store it immediately, there wwon't
+be antoher chance to see it again. I you lost a key it is lost forever.
+There's no way to retrieve it.
+The way of computing fingerprint is different:
+#+BEGIN_SRC bash
+  openssl pkcs8 -in aws-created-key -inform PEM -outform DER -topk8 -nocrypt | 
+    openssl sha1 -c
+#+END_SRC
+* Using python
+* references
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+https://gist.github.com/jtriley/7270594
