@@ -7,10 +7,15 @@ def fp_format(in_str):
     return ":".join(chunks)
 
 
-def local_fingerprint(key_file_obj):
+def md5_fingerprint(key_file_obj):
     key = RSA.import_key(key_file_obj.read())
     k_der = key.publickey().export_key(format='DER')
     hash_sum = hashlib.md5(k_der).hexdigest()
     return fp_format(hash_sum)
 
-    
+def sha1_fingerprint(key_file_obj):
+    key = RSA.import_key(key_file_obj.read())
+    k_der = key.export_key(format='DER', pkcs=8)
+    hash_sum = hashlib.sha1(k_der).hexdigest()
+    return fp_format(hash_sum)
+
