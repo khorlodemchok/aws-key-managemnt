@@ -19,3 +19,10 @@ def sha1_fingerprint(key_file_obj):
     hash_sum = hashlib.sha1(k_der).hexdigest()
     return fp_format(hash_sum)
 
+def fingerprint(key_file_obj, origin):
+    if not origin in ["local", "aws"]:
+        raise AttributeError
+    if origin == 'local':
+        return md5_fingerprint(key_file_obj)
+    elif origin == 'aws':
+        return sha1_fingerprint(key_file_obj)
