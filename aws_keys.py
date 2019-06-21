@@ -7,22 +7,21 @@ def fp_format(in_str):
     return ":".join(chunks)
 
 
-def md5_fingerprint(key_file_obj):
-    key = RSA.import_key(key_file_obj.read())
+def md5_fingerprint(key):
     k_der = key.publickey().export_key(format='DER')
     hash_sum = hashlib.md5(k_der).hexdigest()
     return fp_format(hash_sum)
 
-def sha1_fingerprint(key_file_obj):
-    key = RSA.import_key(key_file_obj.read())
+def sha1_fingerprint(key):
     k_der = key.export_key(format='DER', pkcs=8)
     hash_sum = hashlib.sha1(k_der).hexdigest()
     return fp_format(hash_sum)
 
 def fingerprint(key_file_obj, origin):
+    key = RSA.import_key(key_file_obj.read())
     if not origin in ["local", "aws"]:
         raise AttributeError
     if origin == 'local':
-        return md5_fingerprint(key_file_obj)
+        return md5_fingerprint(key)
     elif origin == 'aws':
-        return sha1_fingerprint(key_file_obj)
+        return sha1_fingerprint(key)
