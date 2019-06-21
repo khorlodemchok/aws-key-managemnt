@@ -19,9 +19,9 @@ def sha1_fingerprint(key):
 
 def fingerprint(key_file_obj, origin):
     key = RSA.import_key(key_file_obj.read())
-    if not origin in ["local", "aws"]:
-        raise AttributeError
     if origin == 'local':
         return md5_fingerprint(key)
     elif origin == 'aws':
         return sha1_fingerprint(key)
+    else:
+        raise AttributeError
