@@ -1,62 +1,63 @@
-* Using bash
-** Upload you default public key
-Of course, we don't like AWS key managemnt GUI. Why not jus login to a newly
-created instance with our favorite SSH key. It's easy. Just upload your key
-using aws commandline.
+* Introduction
+In this article I'm going to explain how to manage AWS EC2 keys using
+AWS commandline tools and Python with boto3 library. It allows to automate
+tasks and work without using AWS console.
+Before you start, you need to have commandline tools installed and configured
+as described here: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
+The same configuration is used by both tools: the commandline and boto3.
+* Using commandline
+** Uploading SSH public key
+Instead creating a key with AWS console you can upload your default ssh key to EC2.
+I allows to easy use default ssh key for a newly created instances.
 #+BEGIN_SRC bash
   aws ec2 import-key-pair --key-name 'test-key' \
 	     --public-key-material file://~/.ssh/id_rsa.pub
 #+END_SRC
-You can finish now and go play with your new instance.
-** Veryfying keys
-Here Bezos made things worse. You can display keys in your account:
+** Veryfying uploaded keys
+You can display keys in your account:
 #+BEGIN_SRC bash
   aws ec2 describe-key-pairs
 #+END_SRC
-The output:
+The example output:
 #+BEGIN_SRC json
   {
       "KeyPairs": [
 	  {
-	      "KeyFingerprint": "i dont want to show",
+	      "KeyFingerprint": "65:8f:82:a0:8f:53:77:ad:63:c8:f7:15:d6:36:69:04",
 	      "KeyName": "maciekw@laptop"
 	  },
 	  {
-	      "KeyFingerprint": "i dont want to show",
+	      "KeyFingerprint": "f7:35:02:f7:1e:f4:7c:e7:16:7b:f3:98:dc:f9:16:d6:d2:fd:13:21",
 	      "KeyName": "test-key"
 	  }
       ]
   }
 #+END_SRC
-
-The fingerprint displayed by the command has nothing to do with OpenSSH
-fingerprint. To compute such fingerprint from your key you have to have private
-key in DER format, then compute MD5:
+AWS computes fingerprint differently then ssh-keygen -l command. To compare keys you
+have to compute your local fingerprint in this way:
 #+BEGIN_SRC bash
   openssl rsa -in ~/.ssh/id_rsa -pubout -outform DER |
     openssl md5 -c
 #+END_SRC
-
-To make thing even worse - in case of keys created in EC2 fingerprints are
-computed in diferent way. Please refer link at the end of the article.
+It dumps public part of the key in DER format and computes MD5 sum.
 ** Creating keys with AWS
-You can also create keys within AWS. I don't know why you would do it, but if you wish...
+You can also create keys with AWS - like in console.
 #+BEGIN_SRC bash
   aws ec2 create-key-pair --key-name "test-aws-created" |
     jq -r '.KeyMaterial'
 #+END_SRC
-
-Here you go. The pretty private key you can redirect to file. Store it immediately, there wwon't
-be antoher chance to see it again. I you lost a key it is lost forever.
-There's no way to retrieve it.
-The way of computing fingerprint is different:
+The command creates key with is displayed in JSON file and extracts it.
+You can redirect the command output to a file. Make sure you saved the new
+key. There is other way to retrieve it.
+The way of computing fingerprint created by AWS is different:
 #+BEGIN_SRC bash
   openssl pkcs8 -in aws-created-key -inform PEM -outform DER -topk8 -nocrypt | 
     openssl sha1 -c
 #+END_SRC
+It dumps whole public key in DER and PKCS#8 format and computes SHA1 sum.
 * Using python
-We're going to use pycryptodome package. Please create new virtualenv.
-I don't want to be responsible if you mess up your system.
+The code pycryptodome package. I recommend using virtualenv.
+** Computing fingerprints
 First, we have to load the key from a file:
 #+BEGIN_SRC python
   from Crypto.PublicKey import RSA
@@ -78,7 +79,7 @@ In case of AWS genrated keys:
     k_der = key.export_key(format='DER', pkcs=8)
     hash_sum = hashlib.sha1(k_der).hexdigest()
 #+END_SRC
-Here, we're stroring a kublic key in DER format and PKCS#8 standard. Then computing SHA1.
+Here, we're stroring a public key in DER format and PKCS#8 standard. Then computing SHA1.
 The last thing to format hex sum with 2-character sums separated by colons:
 #+BEGIN_SRC python
 def fp_format(in_str):
