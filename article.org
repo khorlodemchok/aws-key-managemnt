@@ -57,16 +57,33 @@ The way of computing fingerprint is different:
 * Using python
 We're going to use pycryptodome package. Please create new virtualenv.
 I don't want to be responsible if you mess up your system.
+First, we have to load the key from a file:
 #+BEGIN_SRC python
   from Crypto.PublicKey import RSA
-  import hashlib
 
-  proper_fp = "65:8f:82:a0:8f:53:77:ad:63:c8:f7:15:d6:36:69:04"
-
-  k = RSA.import_key(open('locally-created-key', 'rb').read())
-  k_der = k.publickey().export_key(format='DER')
-
-  hash = hashlib.md5(k_der).hexdigest()
+  with open('key_file') as key_file_obj:
+      key = RSA.import_key(key_file_obj.read())
+#+END_SRC
+There is one problem. The library seems to be not supporting RFC4716 (Keys starting with
+'---- BEGIN SSH2 PUBLIC KEY ----') . Use -m 'PEM' while creating keys.
+Creating fingerprint for locally generated keys:
+#+BEGIN_SRC python
+    k_der = key.publickey().export_key(format='DER')
+    hash_sum = hashlib.md5(k_der).hexdigest()
+#+END_SRC
+We're extracting public part of key, exporting it into DER format and computing
+MD5.
+In case of AWS genrated keys:
+#+BEGIN_SRC python
+    k_der = key.export_key(format='DER', pkcs=8)
+    hash_sum = hashlib.sha1(k_der).hexdigest()
+#+END_SRC
+Here, we're stroring a kublic key in DER format and PKCS#8 standard. Then computing SHA1.
+The last thing to format hex sum with 2-character sums separated by colons:
+#+BEGIN_SRC python
+def fp_format(in_str):
+    chunks = [in_str[i:i+2] for i in range(0, len(in_str), 2)]
+    return ":".join(chunks)
 #+END_SRC
 * references
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
